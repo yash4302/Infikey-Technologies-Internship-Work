@@ -1,0 +1,8 @@
+Assignment 1
+Find the minimum and maximum from List of integers.
+
+Assignment 2
+Reverse a List
+
+Assignment 3
+Create a class with name Solar System and make functions to print no of galaxies, planets ,stars.
