@@ -188,7 +188,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) => SecondRoute(
-                                              title: 'Sign In', index: index
+                                              title: _featured[index], index: index
                                             )),
                                       );
                                     },
@@ -411,7 +411,7 @@ class _SecondRoutePageState extends State<SecondRoute>{
                   onPressed: () {},
                   color: Colors.red[400],
                   child: Text(
-                    "Button",
+                    "Book Now",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 22.0,
