@@ -1,9 +1,29 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:core';
 import 'dart:async';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  DatabaseHandler databaseHandler = DatabaseHandler.privateConstructor();
+  List<Tasks> tasks = await databaseHandler.readNotCompleted();
+  for(Tasks task in tasks) {
+    ids.add(task.id);
+    limits.add(task.limit);
+    counts.add(task.counting);
+    incomplete.add(task.name);
+  }
+
+  tasks = await databaseHandler.readCompleted();
+  for(Tasks task in tasks) {
+    completed.add(task.name);
+    completed_ids.add(task.id);
+  }
   runApp(MyApp());
 }
 
@@ -11,6 +31,7 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -34,6 +55,8 @@ List<String> completed = <String>[];
 List<String> incomplete = <String>[];
 List<int> counts = <int>[];
 List<int> limits = <int>[];
+List<int> ids = <int>[];
+List<int> completed_ids = <int>[];
 
 class HomePage extends StatefulWidget {
   HomePage({Key? key}) : super(key: key);
@@ -47,6 +70,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
+    DatabaseHandler databaseHandler = DatabaseHandler.privateConstructor();
     setState(() {});
 
     return Scaffold(
@@ -128,7 +152,10 @@ class _HomePageState extends State<HomePage> {
                                             onPressed: () {
                                               setState(() {
                                                 counts[index] = 0;
+                                                Tasks task = Tasks(id: ids[index], name: incomplete[index], isCompleted: 0, limit: limits[index], counting: counts[index]);
+                                                databaseHandler.update(task);
                                               });
+                                              setState(() {});
                                             },
                                             child: Text('Reset'),
                                         ),
@@ -136,11 +163,15 @@ class _HomePageState extends State<HomePage> {
                                         TextButton(
                                           onPressed: () {
                                             setState(() {
+                                              Tasks task = Tasks(id: ids[index], name: incomplete[index], isCompleted: 1, limit: limits[index], counting: counts[index]);
+                                              databaseHandler.update(task);
+                                              completed_ids.add(ids[index]);
                                               completed.add(incomplete[index]);
                                               incomplete.removeAt(index);
                                               counts.removeAt(index);
                                               limits.removeAt(index);
                                             });
+                                            setState(() {});
                                           },
                                           child: Text('Mark as Completed'),
                                         ),
@@ -200,8 +231,11 @@ class _HomePageState extends State<HomePage> {
                                 TextButton(
                                     onPressed: () {
                                       setState(() {
+                                        Tasks task = Tasks(id: completed_ids[index], name: completed[index], isCompleted: 1, limit: 0, counting: 0);
+                                        databaseHandler.delete(task.id);
                                         completed.removeAt(index);
                                       });
+                                      setState(() {});
                                     },
                                     child: Text("Delete")
                                 ),
@@ -272,6 +306,7 @@ class FirstPage extends StatefulWidget {
 class _FirstPageState extends State<FirstPage> {
   @override
   Widget build(BuildContext context) {
+    DatabaseHandler databaseHandler = DatabaseHandler.privateConstructor();
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -346,6 +381,8 @@ class _FirstPageState extends State<FirstPage> {
                         // called again, and so nothing would appear to happen.
                         if(counts[widget.index] < limits[widget.index]) {
                           counts[widget.index]++;
+                          Tasks task = Tasks(id: ids[widget.index], name: incomplete[widget.index], isCompleted: 0, limit: limits[widget.index], counting: counts[widget.index]);
+                          databaseHandler.update(task);
                         }
                         else {
                           showDialog(
@@ -359,6 +396,7 @@ class _FirstPageState extends State<FirstPage> {
                                     RaisedButton(
                                       onPressed: () {
                                         Navigator.pop(context);
+                                        setState(() {});
                                       },
                                       child: Text('OK'),
                                     ),
@@ -366,6 +404,9 @@ class _FirstPageState extends State<FirstPage> {
                                     RaisedButton(
                                       onPressed: () {
                                         setState(() {
+                                          Tasks task = Tasks(id: ids[widget.index], name: incomplete[widget.index], isCompleted: 1, limit: limits[widget.index], counting: counts[widget.index]);
+                                          databaseHandler.update(task);
+                                          completed_ids.add(ids[widget.index]);
                                           completed.add(incomplete[widget.index]);
                                           incomplete.removeAt(widget.index);
                                           counts.removeAt(widget.index);
@@ -375,7 +416,7 @@ class _FirstPageState extends State<FirstPage> {
                                         Navigator.push(
                                             context,
                                             MaterialPageRoute(builder: (context) => HomePage() )
-                                        );
+                                        ).then((_) => setState(() {}));
                                       },
                                       child: Text('Mark as Completed'),
                                     ),
@@ -385,6 +426,7 @@ class _FirstPageState extends State<FirstPage> {
                           );
                         }
                       });
+                      setState(() {});
                     },
 
                     color: Colors.blue,
@@ -415,6 +457,8 @@ class _FirstPageState extends State<FirstPage> {
                         if(counts[widget.index] > 0) {
                           setState(() {
                             counts[widget.index]--;
+                            Tasks task = Tasks(id: ids[widget.index], name: incomplete[widget.index], isCompleted: 0, limit: limits[widget.index], counting: counts[widget.index]);
+                            databaseHandler.update(task);
                           });
                         }
                         else {
@@ -439,6 +483,7 @@ class _FirstPageState extends State<FirstPage> {
                           );
                         }
                       });
+                      setState(() {});
                     },
                     color: Colors.red[300],
                     child: Text(
@@ -468,7 +513,10 @@ class _FirstPageState extends State<FirstPage> {
                 onPressed: () {
                   setState(() {
                     counts[widget.index] = 0;
+                    Tasks task = Tasks(id: ids[widget.index], name: incomplete[widget.index], isCompleted: 0, limit: limits[widget.index], counting: counts[widget.index]);
+                    databaseHandler.update(task);
                   });
+                  setState(() {});
                 },
                 color: Colors.red[400],
                 child: Text(
@@ -515,6 +563,7 @@ class _NewTaskPageState extends State<NewTaskPage> {
 
   @override
   Widget build(BuildContext context) {
+    DatabaseHandler databaseHandler = DatabaseHandler.privateConstructor();
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -580,6 +629,8 @@ class _NewTaskPageState extends State<NewTaskPage> {
                 RaisedButton(
                   onPressed: () {
                     setState(() {
+                      Tasks task = Tasks(id: 0, name: taskName.text, isCompleted: 0, limit: int.parse(taskLimit.text), counting: 0);
+                      databaseHandler.insert(task);
                       incomplete.add(taskName.text);
                       limits.add(int.parse(taskLimit.text));
                       counts.add(0);
@@ -599,6 +650,125 @@ class _NewTaskPageState extends State<NewTaskPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class Tasks {
+  int isCompleted;
+  int id;
+  String name;
+  int counting;
+  int limit;
+
+  Tasks({
+    required this.id,
+    required this.name,
+    required this.isCompleted,
+    required this.limit,
+    required this.counting
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'isCompleted': isCompleted,
+      'counts': counting,
+      'limits': limit
+    };
+  }
+}
+
+class DatabaseHandler {
+  DatabaseHandler.privateConstructor();
+
+  static final DatabaseHandler instance = DatabaseHandler.privateConstructor();
+  static Database? _database;
+
+  Future<Database?> get database async {
+    if (_database == null) {
+      _database = await initializeDatabase();
+    }
+    return _database;
+  }
+
+  Future<Database> initializeDatabase() async {
+    Directory directory = await getApplicationDocumentsDirectory();
+    String path = directory.path + 'todo.db';
+    var todosDatabase = await openDatabase(path, version: 2, onCreate: _createDb);
+    return todosDatabase;
+  }
+
+  void _createDb(Database db, int newVersion) async {
+    await db.execute(
+        'CREATE TABLE tasks(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, isCompleted INTEGER, limits INTEGER, counts INTEGER);');
+  }
+
+  Future<void> insert(Tasks task) async {
+    Database? db = await this.database;
+    db!.insert(
+      'tasks',
+      {
+        'limits': task.limit,
+        'name': task.name,
+        'isCompleted': task.isCompleted,
+        'counts': task.counting
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Tasks>> readCompleted() async {
+    Database? db = await this.database;
+
+    final List<Map<String, dynamic>> maps = await db!.query('tasks', where: 'isCompleted=1');
+
+    return List.generate(maps.length, (i) {
+      return Tasks(
+        id: maps[i]['id'],
+        name: maps[i]['name'],
+        isCompleted: maps[i]['isCompleted'],
+        counting: maps[i]['counts'],
+        limit: maps[i]['limits'],
+      );
+    });
+  }
+
+  Future<List<Tasks>> readNotCompleted() async {
+    Database? db = await this.database;
+
+    final List<Map<String, dynamic>> maps = await db!.query('tasks', where: 'isCompleted=0');
+
+    return List.generate(maps.length, (i) {
+      return Tasks(
+        id: maps[i]['id'],
+        name: maps[i]['name'],
+        isCompleted: maps[i]['isCompleted'],
+        counting: maps[i]['counts'],
+        limit: maps[i]['limits'],
+      );
+    });
+  }
+
+  Future<void> update(Tasks task) async {
+    Database? db =  await this.database;
+
+    db!.update(
+      'tasks',
+      task.toMap(),
+      where: 'id = ?',
+      whereArgs: [task.id],
+    );
+  }
+
+  Future<void> delete(int id) async {
+    Database? db = await this.database;
+
+    db!.delete(
+      'tasks',
+      where: 'id = ?',
+      whereArgs: [id],
     );
   }
 }
