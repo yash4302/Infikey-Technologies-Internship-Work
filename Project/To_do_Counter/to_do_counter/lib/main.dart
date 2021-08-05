@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'dart:async';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   DatabaseHandler databaseHandler = DatabaseHandler.privateConstructor();
+
   List<Tasks> tasks = await databaseHandler.readNotCompleted();
   for(Tasks task in tasks) {
     ids.add(task.id);
@@ -24,6 +26,7 @@ void main() async {
     completed.add(task.name);
     completed_ids.add(task.id);
   }
+
   runApp(MyApp());
 }
 
@@ -119,8 +122,7 @@ class _HomePageState extends State<HomePage> {
                                         )
                                     ),
                                   ).then( (_) {
-                                    setState(() {});
-                                    setState(() {});
+                                    this.setState(() {});
                                   }
                                   );
                                 },
@@ -169,6 +171,7 @@ class _HomePageState extends State<HomePage> {
                                               completed_ids.add(ids[index]);
                                               completed.add(incomplete[index]);
                                               incomplete.removeAt(index);
+                                              ids.removeAt(index);
                                               counts.removeAt(index);
                                               limits.removeAt(index);
                                             });
@@ -237,7 +240,7 @@ class _HomePageState extends State<HomePage> {
                                     onPressed: () {
                                       setState(() {
                                         Tasks task = Tasks(id: completed_ids[index], name: completed[index], isCompleted: 1, limit: 0, counting: 0);
-                                        databaseHandler.delete(task.id);
+                                        databaseHandler.delete(task);
                                         completed.removeAt(index);
                                         completed_ids.removeAt(index);
                                       });
@@ -415,6 +418,7 @@ class _FirstPageState extends State<FirstPage> {
                                           completed_ids.add(ids[widget.index]);
                                           completed.add(incomplete[widget.index]);
                                           incomplete.removeAt(widget.index);
+                                          ids.removeAt(widget.index);
                                           counts.removeAt(widget.index);
                                           limits.removeAt(widget.index);
                                         });
@@ -638,8 +642,22 @@ class _NewTaskPageState extends State<NewTaskPage> {
                   onPressed: () {
                     if(taskLimit.text.isNotEmpty == true) {
                       setState(() {
-                        Tasks task = Tasks(id: 0, name: taskName.text, isCompleted: 0, limit: int.parse(taskLimit.text), counting: 0);
+                        int id;
+                        if(completed_ids.length == 0 && incomplete.length == 0) {
+                          id = 1;
+                        }
+                        else {
+                          if(completed_ids.length > 0 && incomplete.length > 0) {
+                            id = max(completed_ids[completed_ids.length-1], ids[ids.length-1]) + 1;
+                          }
+                          else {
+                            id = completed_ids.length>0 ? completed_ids[completed_ids.length-1]+1 : ids[ids.length-1]+1;
+                          }
+                        }
+
+                        Tasks task = Tasks(id: id, name: taskName.text, isCompleted: 0, limit: int.parse(taskLimit.text), counting: 0);
                         databaseHandler.insert(task);
+                        ids.add(id);
                         incomplete.add(taskName.text);
                         limits.add(int.parse(taskLimit.text));
                         counts.add(0);
@@ -741,12 +759,7 @@ class DatabaseHandler {
     Database? db = await this.database;
     db!.insert(
       'tasks',
-      {
-        'limits': task.limit,
-        'name': task.name,
-        'isCompleted': task.isCompleted,
-        'counts': task.counting
-      },
+      task.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
@@ -794,13 +807,13 @@ class DatabaseHandler {
     );
   }
 
-  Future<void> delete(int id) async {
+  Future<void> delete(Tasks task) async {
     Database? db = await this.database;
 
     db!.delete(
       'tasks',
       where: 'id = ?',
-      whereArgs: [id],
+      whereArgs: [task.id],
     );
   }
 }
