@@ -71,7 +71,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     DatabaseHandler databaseHandler = DatabaseHandler.privateConstructor();
-    setState(() {});
+    this.setState(() {});
 
     return Scaffold(
       appBar: AppBar(
@@ -120,6 +120,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   ).then( (_) {
                                     setState(() {});
+                                    setState(() {});
                                   }
                                   );
                                 },
@@ -155,7 +156,7 @@ class _HomePageState extends State<HomePage> {
                                                 Tasks task = Tasks(id: ids[index], name: incomplete[index], isCompleted: 0, limit: limits[index], counting: counts[index]);
                                                 databaseHandler.update(task);
                                               });
-                                              setState(() {});
+                                              this.setState(() {});
                                             },
                                             child: Text('Reset'),
                                         ),
@@ -171,7 +172,7 @@ class _HomePageState extends State<HomePage> {
                                               counts.removeAt(index);
                                               limits.removeAt(index);
                                             });
-                                            setState(() {});
+                                            this.setState(() {});
                                           },
                                           child: Text('Mark as Completed'),
                                         ),
@@ -216,15 +217,19 @@ class _HomePageState extends State<HomePage> {
               Container(
                 child: SingleChildScrollView(
                   child: Container(
-                    height: MediaQuery.of(context).size.height*0.3,
+                    height: MediaQuery.of(context).size.height*0.35,
                     width: MediaQuery.of(context).size.width*0.865,
 
                     child: ListView.separated(
                         itemBuilder: (context, index) {
                           return Container(
                             height: 50,
-                            color: Colors.grey[300],
                             padding: EdgeInsets.all(10.0),
+
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.grey[300],
+                            ),
 
                             child: Row(
                               children: [
@@ -234,8 +239,9 @@ class _HomePageState extends State<HomePage> {
                                         Tasks task = Tasks(id: completed_ids[index], name: completed[index], isCompleted: 1, limit: 0, counting: 0);
                                         databaseHandler.delete(task.id);
                                         completed.removeAt(index);
+                                        completed_ids.removeAt(index);
                                       });
-                                      setState(() {});
+                                      this.setState(() {});
                                     },
                                     child: Text("Delete")
                                 ),
@@ -413,9 +419,10 @@ class _FirstPageState extends State<FirstPage> {
                                           limits.removeAt(widget.index);
                                         });
 
-                                        Navigator.push(
+                                        Navigator.pushAndRemoveUntil(
                                             context,
-                                            MaterialPageRoute(builder: (context) => HomePage() )
+                                            MaterialPageRoute(builder: (context) => HomePage() ),
+                                            (Route<dynamic> route) => false
                                         ).then((_) => setState(() {}));
                                       },
                                       child: Text('Mark as Completed'),
@@ -426,7 +433,7 @@ class _FirstPageState extends State<FirstPage> {
                           );
                         }
                       });
-                      setState(() {});
+                      this.setState(() {});
                     },
 
                     color: Colors.blue,
@@ -483,7 +490,7 @@ class _FirstPageState extends State<FirstPage> {
                           );
                         }
                       });
-                      setState(() {});
+                      this.setState(() {});
                     },
                     color: Colors.red[300],
                     child: Text(
@@ -516,7 +523,7 @@ class _FirstPageState extends State<FirstPage> {
                     Tasks task = Tasks(id: ids[widget.index], name: incomplete[widget.index], isCompleted: 0, limit: limits[widget.index], counting: counts[widget.index]);
                     databaseHandler.update(task);
                   });
-                  setState(() {});
+                  this.setState(() {});
                 },
                 color: Colors.red[400],
                 child: Text(
@@ -614,11 +621,12 @@ class _NewTaskPageState extends State<NewTaskPage> {
               children: <Widget>[
                 RaisedButton(
                   onPressed: () {
-                    Navigator.push(
+                    Navigator.pushAndRemoveUntil(
                         context,
                       MaterialPageRoute(
                           builder: (context) => HomePage()
                       ),
+                      (Route<dynamic> route) => false
                     );
                   },
                   child: Text('Cancel'),
@@ -628,20 +636,44 @@ class _NewTaskPageState extends State<NewTaskPage> {
 
                 RaisedButton(
                   onPressed: () {
-                    setState(() {
-                      Tasks task = Tasks(id: 0, name: taskName.text, isCompleted: 0, limit: int.parse(taskLimit.text), counting: 0);
-                      databaseHandler.insert(task);
-                      incomplete.add(taskName.text);
-                      limits.add(int.parse(taskLimit.text));
-                      counts.add(0);
-                    });
+                    if(taskLimit.text.isNotEmpty == true) {
+                      setState(() {
+                        Tasks task = Tasks(id: 0, name: taskName.text, isCompleted: 0, limit: int.parse(taskLimit.text), counting: 0);
+                        databaseHandler.insert(task);
+                        incomplete.add(taskName.text);
+                        limits.add(int.parse(taskLimit.text));
+                        counts.add(0);
+                      });
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => HomePage()
-                      ),
-                    );
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => HomePage()
+                        ),
+                        (Route<dynamic> route) => false
+                      );
+                    }
+                    else {
+                      showDialog(
+                          context: context,
+                          builder: (_) {
+                            return AlertDialog(
+                              title: Text('Error'),
+                              content: Text("Limit must be provided"),
+
+                              actions: [
+                                RaisedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+
+                                  child: Text('OK'),
+                                ),
+                              ],
+                            );
+                          }
+                      );
+                    }
                   },
                   child: Text('Add'),
                 ),
